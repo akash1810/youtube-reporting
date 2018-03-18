@@ -15,7 +15,7 @@ Authentication can be done in two ways:
 - `npm install`
 - Fill in the config files in the [`config`](./config) directory
 - Choose which auth the use:
-  - By default its service config
+  - By default its service account
   - Uncomment line 27 and comment line 28 in [`main.js`](./main.js) to use oauth2
 - `npm run get-videos`
 
