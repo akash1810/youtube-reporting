@@ -29,6 +29,7 @@ async function main() {
 
     const channels = await Channels.getChannelsInCms(authClient);
 
+    // just use the first channel in the CMS for demo purposes
     const channelSubset = channels.slice(0, 1);
 
     return channelSubset.reduce(async (acc, channel) => {
