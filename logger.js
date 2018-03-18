@@ -10,12 +10,12 @@ class Logger {
         console.info(chalk.cyan(`${moment().format()} [INFO] ${message} ${Object.keys(extra).length > 0 ? JSON.stringify(extra) : ''}`));
     }
 
-    static warn(message) {
-        console.warn(chalk.yellow(`${moment().format()} [WARN] ${Object.keys(extra).length > 0 ? JSON.stringify(extra) : ''}`));
+    static warn(message, extra = {}) {
+        console.warn(chalk.yellow(`${moment().format()} [WARN] ${message} ${Object.keys(extra).length > 0 ? JSON.stringify(extra) : ''}`));
     }
 
-    static error(message) {
-        console.error(chalk.bold.red(`${moment().format()} [ERROR] ${Object.keys(extra).length > 0 ? JSON.stringify(extra) : ''}`));
+    static error(message, extra = {}) {
+        console.error(chalk.bold.red(`${moment().format()} [ERROR] ${message} ${Object.keys(extra).length > 0 ? JSON.stringify(extra) : ''}`));
     }
 }
 
