@@ -30,18 +30,20 @@ async function main() {
     const channels = await Channels.getChannelsInCms(authClient);
 
     // just use the first channel in the CMS for demo purposes
-    const channelSubset = channels.slice(0, 1);
+    const channelSubset = channels.filter(_ => _.id === 'UC-pCzg7zq1Nahs0lENOqyiw');
 
-    return channelSubset.reduce(async (acc, channel) => {
-        const videos = await Videos.getChannelUploads(authClient, channel);
-        acc.set(channel.id, videos);
+    return channels.reduce((acc, channel) => {
+        const videosPromises = Videos.getChannelUploads(authClient, channel);
+        acc.set(channel.id, videosPromises);
         return acc;
     }, new Map());
 }
 
 if (isConfigValid()) {
-    main().then(channelVideos => {
-        for (const [channel, videos] of channelVideos) {
+    main().then(async channelVideos => {
+        for (const [channel, videosPromises] of channelVideos) {
+            const videos = await videosPromises;
+
             const summary = videos.reduce((acc, video) => {
                 const status = video.status.privacyStatus;
         
@@ -53,7 +55,7 @@ if (isConfigValid()) {
             Logger.info(`video summary for channel ${channel}:`, summary);
         
             videos.forEach(video => {
-                Logger.log(`videoId=${video.contentDetails.videoId} videoPublishedAt=${video.contentDetails.videoPublishedAt} privacyStatus=${video.status.privacyStatus}`);
+                Logger.log(`videoId=${video.id} videoPublishedAt=${video.snippet.publishedAt} privacyStatus=${video.status.privacyStatus}`, video);
             });
         }
     

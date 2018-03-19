@@ -56,10 +56,11 @@ class ServiceAccountAuthentication {
     }
 }
 
-async function getPagedItems({ type, fn, options, allItems = [] }) {
+async function callAPI({ type, fn, options, allItems = [] }) {
     const response = await new Promise((resolve, reject) => {
         fn(options, (err, resp) => {
             if (err) {
+                Logger.error(err.response);
                 reject(err);
             } else {
                 resolve({
@@ -77,7 +78,7 @@ async function getPagedItems({ type, fn, options, allItems = [] }) {
         const nextOpts = Object.assign({}, options, {
             pageToken: response.nextPageToken
         });
-        return await getPagedItems({
+        return await callAPI({
             type,
             fn,
             options: nextOpts,
@@ -96,7 +97,7 @@ class Channels {
             onBehalfOfContentOwner: contentOwner
         };
 
-        return getPagedItems({
+        return callAPI({
             type: 'channels.list',
             fn: youtube.channels.list,
             options
@@ -105,22 +106,49 @@ class Channels {
 }
 
 class Videos {
-    static async getChannelUploads({ authClient, contentOwner }, { id, contentDetails }) {
+    static async getChannelUploads({ authClient, contentOwner }, { id }) {
         const options = {
             auth: authClient,
-            part: 'id,contentDetails,snippet,status',
-            playlistId: contentDetails.relatedPlaylists.uploads,
+            part: 'snippet',
+            channelId: id,
+            forContentOwner: true,
             onBehalfOfContentOwner: contentOwner,
-            managedByMe: true,
-            maxResults: 50,
-            onBehalfOfContentOwnerChannel: id
+            type: 'video',
+            fields: 'items(id(kind,videoId)),kind,nextPageToken,pageInfo,prevPageToken'
         };
-        
-        return getPagedItems({
-            type: 'playlistItems.list',
-            fn: youtube.playlistItems.list,
+
+        const videoList = await callAPI({
+            type: 'youtube.search.list',
+            fn: youtube.search.list,
             options
         });
+
+        const videoInfo = await Promise.all(
+            videoList.map(async video => await Videos.getVideoInformation({authClient, contentOwner}, { id: video.id.videoId }))
+        );
+
+        return videoInfo.filter(Boolean);
+    }
+    
+    static async getVideoInformation({ authClient, contentOwner }, { id }) {
+        Logger.log(`Getting video information for videoId=${id}`);
+        const options = {
+            auth: authClient,
+            part: 'snippet,status,contentDetails',
+            id,
+            onBehalfOfContentOwner: contentOwner,
+            fields: 'items(contentDetails(duration,hasCustomThumbnail),id,kind,monetizationDetails,snippet(channelId,description,publishedAt,tags,title),status/privacyStatus),kind'
+        };
+
+        const video = await callAPI({
+            type: 'youtube.videos.list',
+            fn: youtube.videos.list,
+            options
+        });
+
+        // We're getting information for a single video the API returns an array.
+        // Lets return the first item (the video) or nothing (video doesn't exist).
+        return video.length === 1 ? video[0] : undefined;
     }
 }
 
