@@ -137,7 +137,7 @@ class Videos {
             part: 'snippet,status,contentDetails',
             id,
             onBehalfOfContentOwner: contentOwner,
-            fields: 'items(contentDetails(duration,hasCustomThumbnail),id,kind,monetizationDetails,snippet(channelId,description,publishedAt,tags,title),status/privacyStatus),kind'
+            // fields: 'items(contentDetails(duration,hasCustomThumbnail),id,kind,monetizationDetails,snippet(channelId,description,publishedAt,tags,title),status/privacyStatus),kind'
         };
 
         const video = await callAPI({

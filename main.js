@@ -2,6 +2,7 @@
 require('json5/lib/register');
 
 const Logger = require('./logger');
+const Database = require('./database/db');
 const { RefreshTokenAuthentication, ServiceAccountAuthentication, Channels, Videos } = require('./youtube');
 
 const contentOwnerJson = require('./config/content-owner.json5');
@@ -30,9 +31,9 @@ async function main() {
     const channels = await Channels.getChannelsInCms(authClient);
 
     // just use the first channel in the CMS for demo purposes
-    const channelSubset = channels.filter(_ => _.id === 'UC-pCzg7zq1Nahs0lENOqyiw');
+    const channelSubset = channels.filter(_ => _.id === 'UCpQe4CBfI-mGLPDg3hvQcrA');
 
-    return channels.reduce((acc, channel) => {
+    return channelSubset.reduce((acc, channel) => {
         const videosPromises = Videos.getChannelUploads(authClient, channel);
         acc.set(channel.id, videosPromises);
         return acc;
@@ -40,6 +41,8 @@ async function main() {
 }
 
 if (isConfigValid()) {
+    const db = new Database({location: './foo.db'});
+
     main().then(async channelVideos => {
         for (const [channel, videosPromises] of channelVideos) {
             const videos = await videosPromises;
@@ -55,6 +58,7 @@ if (isConfigValid()) {
             Logger.info(`video summary for channel ${channel}:`, summary);
         
             videos.forEach(video => {
+                db.insert(video.id, JSON.stringify(video));
                 Logger.log(`videoId=${video.id} videoPublishedAt=${video.snippet.publishedAt} privacyStatus=${video.status.privacyStatus}`, video);
             });
         }
