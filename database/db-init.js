@@ -1,5 +1,5 @@
 const sqlite3 = require('sqlite3');
-const Logger = require('../logger');
+const Logger = require('../util/logger');
 
 class DatabaseInit {
     constructor({location = ':memory:'}) {
@@ -9,8 +9,17 @@ class DatabaseInit {
 
         const statements = [
             `CREATE TABLE video (
-                videoId PRIMARY KEY
-                , data TEXT NOT NULL
+                id PRIMARY KEY
+                , publishDate TEXT NOT NULL
+                , title TEXT NOT NULL
+                , description TEXT
+                , tags TEXT
+                , channelId TEXT NOT NULL
+                , channelTitle TEXT NOT NULL
+                , categoryId INTEGER NOT NULL
+                , duration INTEGER NOT NULL
+                , hasCustomThumbnail TEXT NOT NULL
+                , privacyStatus TEXT NOT NULL
             );`
         ];
         

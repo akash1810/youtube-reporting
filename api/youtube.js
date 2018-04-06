@@ -1,6 +1,8 @@
 const { google } = require('googleapis');
-const Logger = require('./logger');
+const Logger = require('../util/logger');
 const youtube = google.youtube('v3');
+const sleep = require('../util/sleep');
+const Video = require('../models/video');
 
 class RefreshTokenAuthentication {
     constructor({ contentOwner, client_id, client_secret, refresh_token }) {
@@ -78,6 +80,7 @@ async function callAPI({ type, fn, options, allItems = [] }) {
         const nextOpts = Object.assign({}, options, {
             pageToken: response.nextPageToken
         });
+        await sleep();
         return await callAPI({
             type,
             fn,
@@ -87,12 +90,11 @@ async function callAPI({ type, fn, options, allItems = [] }) {
     }
 }
 
-class Channels {
-    static getChannelsInCms({ authClient, contentOwner }) {
+class ContentOwnerApi {
+    static getChannels({ authClient, contentOwner }) {
         const options = {
             auth: authClient,
             part: 'id,contentDetails',
-            // mine: true,
             managedByMe: true,
             onBehalfOfContentOwner: contentOwner
         };
@@ -105,8 +107,8 @@ class Channels {
     }
 }
 
-class Videos {
-    static async getChannelUploads({ authClient, contentOwner }, { id }) {
+class ChannelApi {
+    static async getUploads({ authClient, contentOwner }, { id }) {
         const options = {
             auth: authClient,
             part: 'snippet',
@@ -124,20 +126,24 @@ class Videos {
         });
 
         const videoInfo = await Promise.all(
-            videoList.map(async video => await Videos.getVideoInformation({authClient, contentOwner}, { id: video.id.videoId }))
+            videoList.map(async video => {
+                await sleep();
+                return await VideoApi.getInformation({authClient, contentOwner}, { id: video.id.videoId })
+            })
         );
 
         return videoInfo.filter(Boolean);
     }
-    
-    static async getVideoInformation({ authClient, contentOwner }, { id }) {
+}
+
+class VideoApi {
+    static async getInformation({ authClient, contentOwner }, { id }) {
         Logger.log(`Getting video information for videoId=${id}`);
         const options = {
             auth: authClient,
             part: 'snippet,status,contentDetails',
             id,
-            onBehalfOfContentOwner: contentOwner,
-            // fields: 'items(contentDetails(duration,hasCustomThumbnail),id,kind,monetizationDetails,snippet(channelId,description,publishedAt,tags,title),status/privacyStatus),kind'
+            onBehalfOfContentOwner: contentOwner
         };
 
         const video = await callAPI({
@@ -148,13 +154,14 @@ class Videos {
 
         // We're getting information for a single video the API returns an array.
         // Lets return the first item (the video) or nothing (video doesn't exist).
-        return video.length === 1 ? video[0] : undefined;
+        return video.length === 1 ? new Video(video[0]) : undefined;
     }
 }
 
 module.exports = {
-    RefreshTokenAuthentication,
-    ServiceAccountAuthentication,
-    Channels,
-    Videos
+    RefreshTokenAuthentication
+    , ServiceAccountAuthentication
+    , ContentOwnerApi
+    , ChannelApi
+    , VideoApi
 }

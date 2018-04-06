@@ -1,18 +1,42 @@
 const sqlite3 = require('sqlite3');
-const Logger = require('../logger');
+const Logger = require('../util/logger');
 
 class Database {
     constructor({location = ':memory:'}) {
         this.db = new sqlite3.Database(location);
     }
 
-    insert(key, value) {
+    insert({id, publishDate, title, description, tags, channelId, channelTitle, categoryId, duration, hasCustomThumbnail, privacyStatus}) {
         const sql = `
-            INSERT INTO video (videoId, data)
-            VALUES (?, ?);
+            INSERT INTO video (
+                id
+                , publishDate
+                , title
+                , description
+                , tags
+                , channelId
+                , channelTitle
+                , categoryId
+                , duration
+                , hasCustomThumbnail
+                , privacyStatus
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         `;
 
-        const values = [key, value];
+        const values = [
+            id, 
+            publishDate, 
+            title, 
+            description,
+            tags,
+            channelId, 
+            channelTitle, 
+            categoryId, 
+            duration, 
+            hasCustomThumbnail, 
+            privacyStatus
+        ];
 
         this.db.prepare(sql).run(values, function (err) {
             return err
